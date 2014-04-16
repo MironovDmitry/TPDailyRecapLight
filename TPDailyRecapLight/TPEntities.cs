@@ -42,6 +42,10 @@ namespace TPDailyRecapLight
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public String ToString()
+        {
+            return FirstName + " " + LastName;
+        }
     }
 
     public class Assignment
@@ -55,17 +59,17 @@ namespace TPDailyRecapLight
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public DateTime CreateDate { get; set; }
-        public DateTime ModifyDate { get; set; }
+        public DateTime? StartDate { get; set; }        
+        public DateTime? EndDate { get; set; }        
+        public DateTime? CreateDate { get; set; }
+        public DateTime? ModifyDate { get; set; }
         public double Effort { get; set; }
         public double EffortCompleted { get; set; }
         public double EffortToDo { get; set; }
         public Owner Owner { get; set; }
         public EntityState EntityState { get; set; }
         public Feature Feature { get; set; }
-        public AssignmentsCollection Assignments { get; set; }
+        public AssignmentsCollection Assignments { get; set; }                
     }
 
     public class UserStoriesCollection
