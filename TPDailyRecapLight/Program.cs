@@ -7,6 +7,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Web;
+using System.Text.RegularExpressions;
 
 namespace TPDailyRecapLight
 {
@@ -26,13 +28,21 @@ namespace TPDailyRecapLight
             //create Streamwriter to write html to report file
             //open report top part
             StreamWriter reportFile = new StreamWriter(@"c:\temp\report.html", false, Encoding.UTF8);            
+            
+            //add report header
             StreamReader sr = new StreamReader(ReportPath + "Report_Header.html");
+            
             //update report date in the output report file
             string content = sr.ReadToEnd();
             content = content.Replace("##ReportDate##", reportDate().ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
             reportFile.Write(content);
 
             StartBuidingReport(client, reportDate(), reportFile);
+
+            //add report footer
+            sr = new StreamReader(ReportPath + "Report_Footer.html");
+            content = sr.ReadToEnd();
+            reportFile.Write(content);
 
             //save report file and dispose
             reportFile.Close();
@@ -59,8 +69,7 @@ namespace TPDailyRecapLight
                     //check that we got at least one user story
                     if (userStoriesCollection.Items.Count > 0)
                     { 
-                        //Add report section to output file
-                        
+                        //Add report section to output file                        
                         content = content.Replace("##ProjectName##", project.Name);
                         content = content.Replace("##ProjectOwner##", project.Owner.ToString());
                         sw.Write(content);
@@ -70,7 +79,7 @@ namespace TPDailyRecapLight
                         //get stories lists by status                        
                         try
                         { 
-                            List<UserStory> uc_Completed = userStoriesCollection.Items.Where(us => us.EndDate.Value.Date.Equals(reportDate.Date)).ToList<UserStory>();
+                            List<UserStory> uc_Completed = userStoriesCollection.Items.Where(us => (us.EndDate.HasValue ? us.EndDate.Value.Date.Equals(reportDate.Date):false)).ToList<UserStory>();
                             if (uc_Completed.Count > 0)
                             {
                                 //add Section to report
@@ -96,7 +105,7 @@ namespace TPDailyRecapLight
 
                         try
                         {
-                            List<UserStory> uc_Modified = userStoriesCollection.Items.Where(us => us.ModifyDate.Value.Date.Equals(reportDate.Date) && us.EntityState.Name != "Done" && us.CreateDate.Value.Date.CompareTo(reportDate.Date)!=0).ToList<UserStory>();
+                            List<UserStory> uc_Modified = userStoriesCollection.Items.Where(us => (us.ModifyDate.HasValue ? us.ModifyDate.Value.Date.Equals(reportDate.Date):false) && us.EntityState.Name != "Done" && us.CreateDate.Value.Date.CompareTo(reportDate.Date)!=0).ToList<UserStory>();
                             if (uc_Modified.Count > 0)
                             {
                                 //add Section to report
@@ -145,13 +154,13 @@ namespace TPDailyRecapLight
                         {
 
                         }
-                    }
 
-                    //add report_footer
-                    sr = new StreamReader(ReportPath + "project_footer.html");
-                    content = sr.ReadToEnd();
-                    sw.Write(content);
-                    sr.Close();
+                        //add project_footer
+                        sr = new StreamReader(ReportPath + "project_footer.html");
+                        content = sr.ReadToEnd();
+                        sw.Write(content);
+                        sr.Close();
+                    }                    
                 }
                 
             }
@@ -169,21 +178,28 @@ namespace TPDailyRecapLight
                 StreamReader sr = new StreamReader(ReportPath + "UserStory.html");
                 String content = sr.ReadToEnd();
 
-                content = content.Replace("##UserStoryName##", story.Id + " : " + story.Name);
-               
-                content = content.Replace("##UserStoryDeveloperAndEffort##", "(Прогресс: " + progressInt(story.EffortCompleted, story.Effort).ToString() + "%    Разработчик: " + story.Assignments.Items[0].GeneralUser.ToString() + ")");
-                content = content.Replace("##UserStoryDescription##", story.Description);
+                content = content.Replace("##UserStoryName##", story.Id + " : " + story.Name);               
+                content = content.Replace("##UserStoryDeveloperAndEffort##", "Прогресс: " + progressInt(story.EffortCompleted, story.Effort).ToString() + "%            Разработчик: " + (story.Assignments.Items.Count>0? story.Assignments.Items[0].GeneralUser.ToString():"Не назначен"));
+
+                string description = "";
+                if (story.Description != null && story.Description.Length > 0)
+                {
+                     description = HttpUtility.HtmlDecode(StripHTML(story.Description));
+                }
+                
+                //content = content.Replace("##UserStoryDescription##", (story.Description.Length>0? story.Description.Substring(0,(story.Description.Length> 255?255:story.Description.Length)) + " .....":""));
+                content = content.Replace("##UserStoryDescription##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : ""));
                 sw.Write(content);
                 sr.Close();
             }
             
         }
 
+       
         private static int progressInt(double EffortCompleted, double Effort)
-        {            
-            return (int)(EffortCompleted/Effort*100);
+        {
+            return (Effort == 0 ?0:(int)(EffortCompleted/Effort*100));
         }
-
         private static DateTime reportDate()
         {
             int daysMinus = 1;
@@ -203,6 +219,11 @@ namespace TPDailyRecapLight
                     break;
             }
             return DateTime.Today.AddDays(-daysMinus);;
+        }
+        private static string StripHTML(string HTMLText)
+        {
+            Regex reg = new Regex("<[^>]+>", RegexOptions.IgnoreCase);
+            return reg.Replace(HTMLText, "");
         }
     }
 }
