@@ -15,8 +15,8 @@ namespace TPDailyRecapLight
     class Program
     {
         private const string PathToTp = "https://targetprocess.aemedia.ru/TargetProcess2/api/v1/";
-        private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\dailyrecap\dailyrecap\";
-
+        //private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\dailyrecap\dailyrecap\";
+        private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\DailyRecapLight\";        
 
         static void Main(string[] args)
         {
@@ -61,7 +61,8 @@ namespace TPDailyRecapLight
                 //for each project check if there are any  userstories or bugs modified on this report date
                 foreach(Project project in projectsCollection.Items)
                 {
-                    StreamReader sr = new StreamReader(ReportPath + "Project_top.html");
+                    //StreamReader sr = new StreamReader(ReportPath + "Project_top.html");
+                    StreamReader sr = new StreamReader(ReportPath + "Project_Header.html");
                     String content = sr.ReadToEnd();
 
 
@@ -71,7 +72,8 @@ namespace TPDailyRecapLight
                     { 
                         //Add report section to output file                        
                         content = content.Replace("##ProjectName##", project.Name);
-                        content = content.Replace("##ProjectOwner##", project.Owner.ToString());
+                        //TO-DO: Add project owner to the report
+                        //content = content.Replace("##ProjectOwner##", project.Owner.ToString());
                         sw.Write(content);
                         sr.Close();
 
@@ -83,16 +85,17 @@ namespace TPDailyRecapLight
                             if (uc_Completed.Count > 0)
                             {
                                 //add Section to report
-                                sr = new StreamReader(ReportPath + "status_header.html");
+                                //sr = new StreamReader(ReportPath + "Section_Header.html");
+                                sr = new StreamReader(ReportPath + "Section_Header.html");
                                 content = sr.ReadToEnd();
-                                content = content.Replace("##Status##", "Выполнено");
+                                content = content.Replace("##SectionName##", "Выполнено");
                                 sw.Write(content);
                                 sr.Close();
 
                                 AddRecordsToReport(uc_Completed, project, sw);
 
                                 //add status footer
-                                sr = new StreamReader(ReportPath + "status_footer.html");
+                                sr = new StreamReader(ReportPath + "Section_Footer.html");
                                 content = sr.ReadToEnd();
                                 sw.Write(content);
                                 sr.Close();
@@ -109,16 +112,16 @@ namespace TPDailyRecapLight
                             if (uc_Modified.Count > 0)
                             {
                                 //add Section to report
-                                sr = new StreamReader(ReportPath + "status_header.html");
+                                sr = new StreamReader(ReportPath + "Section_Header.html");
                                 content = sr.ReadToEnd();
-                                content = content.Replace("##Status##", "Изменено");
+                                content = content.Replace("##SectionName##", "Изменено");
                                 sw.Write(content);
                                 sr.Close();
 
                                 AddRecordsToReport(uc_Modified, project, sw);
 
                                 //add status footer
-                                sr = new StreamReader(ReportPath + "status_footer.html");
+                                sr = new StreamReader(ReportPath + "Section_Footer.html");
                                 content = sr.ReadToEnd();
                                 sw.Write(content);
                                 sr.Close();
@@ -135,16 +138,16 @@ namespace TPDailyRecapLight
                             if (uc_Added.Count > 0)
                             {
                                 //add Section to report
-                                sr = new StreamReader(ReportPath + "status_header.html");
+                                sr = new StreamReader(ReportPath + "Section_Header.html");
                                 content = sr.ReadToEnd();
-                                content = content.Replace("##Status##", "Добавлено");
+                                content = content.Replace("##SectionName##", "Добавлено");
                                 sw.Write(content);
                                 sr.Close();
 
                                 AddRecordsToReport(uc_Added, project, sw);
 
                                 //add status footer
-                                sr = new StreamReader(ReportPath + "status_footer.html");
+                                sr = new StreamReader(ReportPath + "Section_Footer.html");
                                 content = sr.ReadToEnd();
                                 sw.Write(content);
                                 sr.Close();
@@ -175,11 +178,13 @@ namespace TPDailyRecapLight
         {
             foreach (UserStory story in userStories)
             {
-                StreamReader sr = new StreamReader(ReportPath + "UserStory.html");
+                //StreamReader sr = new StreamReader(ReportPath + "UserStory.html");
+                StreamReader sr = new StreamReader(ReportPath + "EntityRecord.html");
                 String content = sr.ReadToEnd();
 
-                content = content.Replace("##UserStoryName##", story.Id + " : " + story.Name);               
-                content = content.Replace("##UserStoryDeveloperAndEffort##", "Прогресс: " + progressInt(story.EffortCompleted, story.Effort).ToString() + "%            Разработчик: " + (story.Assignments.Items.Count>0? story.Assignments.Items[0].GeneralUser.ToString():"Не назначен"));
+                content = content.Replace("##EntityName##", story.Id + " : " + story.Name);
+                content = content.Replace("##EntityType##", "UserStory");
+                content = content.Replace("##EntityDeveloperAndEffort##", "Прогресс: " + progressInt(story.EffortCompleted, story.Effort).ToString() + "% &emsp;&emsp; Разработчик: " + (story.Assignments.Items.Count > 0 ? story.Assignments.Items[0].GeneralUser.ToString() : "Не назначен"));
 
                 string description = "";
                 if (story.Description != null && story.Description.Length > 0)
@@ -188,7 +193,7 @@ namespace TPDailyRecapLight
                 }
                 
                 //content = content.Replace("##UserStoryDescription##", (story.Description.Length>0? story.Description.Substring(0,(story.Description.Length> 255?255:story.Description.Length)) + " .....":""));
-                content = content.Replace("##UserStoryDescription##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : ""));
+                content = content.Replace("##EntityDescriptrion##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : ""));
                 sw.Write(content);
                 sr.Close();
             }
@@ -227,3 +232,4 @@ namespace TPDailyRecapLight
         }
     }
 }
+
