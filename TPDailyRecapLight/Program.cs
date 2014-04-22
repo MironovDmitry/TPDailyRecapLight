@@ -72,6 +72,8 @@ namespace TPDailyRecapLight
                     { 
                         //Add report section to output file                        
                         content = content.Replace("##ProjectName##", project.Name);
+                        //add project owner
+                        content = content.Replace("##ProjectOwner##", project.Owner.ToString());
                         //TO-DO: Add project owner to the report
                         //content = content.Replace("##ProjectOwner##", project.Owner.ToString());
                         sw.Write(content);
