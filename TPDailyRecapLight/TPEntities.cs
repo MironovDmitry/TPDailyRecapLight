@@ -102,8 +102,8 @@ namespace TPDailyRecapLight
         public string Description { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
-        public DateTime CreateDate { get; set; }
-        public DateTime ModifyDate { get; set; }
+        public DateTime? CreateDate { get; set; }
+        public DateTime? ModifyDate { get; set; }
         public DateTime? LastCommentDate { get; set; }
         public string Tags { get; set; }
         public double NumericPriority { get; set; }
@@ -128,6 +128,7 @@ namespace TPDailyRecapLight
         public UserStory UserStory { get; set; }
         //public Severity Severity { get; set; }
         public List<object> CustomFields { get; set; }
+        public AssignmentsCollection Assignments { get; set; } 
     }
     
     public class EntityType
