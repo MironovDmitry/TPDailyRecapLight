@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Web;
 using System.Text.RegularExpressions;
+using System.Net.Mail;
 
 namespace TPDailyRecapLight
 {
@@ -19,7 +20,7 @@ namespace TPDailyRecapLight
         private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\DailyRecapLight\";        
 
         static void Main(string[] args)
-        {
+        {            
             //create web client to get response from webserver
             var client = new WebClient();
             client.UseDefaultCredentials = true;
@@ -45,8 +46,10 @@ namespace TPDailyRecapLight
             reportFile.Write(content);
 
             //save report file and dispose
-            reportFile.Close();
+            reportFile.Close();            
             reportFile.Dispose();
+
+            SendEmail();
         }
 
         private static void StartBuidingReport(WebClient client, DateTime reportDate, StreamWriter sw)
@@ -152,8 +155,9 @@ namespace TPDailyRecapLight
 
                         try
                         {
-                            List<UserStory> uc_Added = userStoriesCollection.Items.Where(us => us.CreateDate.Value.Date.Equals(reportDate.Date)).ToList<UserStory>();
-                            List<Bug> bugs_Added = bugsCollection.Items.Where(bug => bug.CreateDate.Value.Date.Equals(reportDate.Date)).ToList<Bug>();
+                            List<UserStory> uc_Added = userStoriesCollection.Items.Where(us => (us.EndDate.HasValue ? false: us.CreateDate.Value.Date.Equals(reportDate.Date))).ToList<UserStory>();
+                            List<Bug> bugs_Added = bugsCollection.Items.Where(bug => (bug.EndDate.HasValue?false: bug.CreateDate.Value.Date.Equals(reportDate.Date))).ToList<Bug>();
+                            //(us => (us.EndDate.HasValue ? us.EndDate.Value.Date.Equals(reportDate.Date):false))
                             if (uc_Added.Count > 0 || bugs_Added.Count >0)
                             {
                                 //add Section to report
@@ -282,6 +286,39 @@ namespace TPDailyRecapLight
             Regex reg = new Regex("<[^>]+>", RegexOptions.IgnoreCase);
             return reg.Replace(HTMLText, "");
         }
+
+        private static void SendEmail()
+        {
+            String subject = "TP Daily Recap";
+            //String bodyHTML = "<h1>Email Notice!</h1><p>Hi there!</p><p>This is the body of the email. I hope it's helpful!</p><p>-Mr. Example </p>";
+            String senderAddress = "tpnotification@dentsuaegis.ru";
+            String recepinetsList = "dmitry.mironov@dentsuaegis.ru";
+            String serviceName = "TPDailyRecap";
+            StreamReader sr = new StreamReader(@"c:\temp\report.html");
+            String bodyHTML = sr.ReadToEnd();
+
+            var mailClient = new AMService.AMServiceClient();
+            mailClient.AddToMailQueueAsIs(subject, bodyHTML, senderAddress, recepinetsList, 5, AMService.PriorityEnum.Normal, null, serviceName);
+            mailClient.Close();
+            sr.Close();
+            sr.Dispose();
+
+            //MailMessage myEmail = new MailMessage();
+            //SmtpClient smtpClient = new SmtpClient("mail.aemedia.ru");
+            //smtpClient.UseDefaultCredentials = true;
+
+            ////Add recepients
+            //myEmail.To.Add("dmitry.mironov@dentsuaegis.ru");
+
+            ////Set email properties
+            //myEmail.From = new MailAddress("dmitry.mironov@dentsuaegis.ru");
+            //myEmail.Subject = "TP Daily Recap";
+            //myEmail.IsBodyHtml = true;
+            //myEmail.Body = "<h1>Email Notice!</h1><p>Hi there!</p><p>This is the body of the email. I hope it's helpful!</p><p>-Mr. Example </p>";
+
+            //smtpClient.Send(myEmail);
+        }
+
     }
 }
 
