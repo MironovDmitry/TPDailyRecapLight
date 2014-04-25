@@ -49,7 +49,7 @@ namespace TPDailyRecapLight
             reportFile.Close();            
             reportFile.Dispose();
 
-            SendEmail();
+            //SendEmail();
         }
 
         private static void StartBuidingReport(WebClient client, DateTime reportDate, StreamWriter sw)
@@ -249,6 +249,14 @@ namespace TPDailyRecapLight
 
                 content = content.Replace("##EntityName##", EntityId + " : " + EntityName);
                 content = content.Replace("##EntityType##", EntityType);
+                int imageWidth = 38;
+                switch (EntityType) 
+                {
+                    case "Bug":
+                        imageWidth = 26;
+                        break;
+                }
+                content = content.Replace("##ImageWidth##", imageWidth.ToString());
                 content = content.Replace("##EntityDeveloperAndEffort##", EntityDeveloperAndEffort);
             
                 content = content.Replace("##EntityDescriptrion##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : ""));
@@ -301,22 +309,7 @@ namespace TPDailyRecapLight
             mailClient.AddToMailQueueAsIs(subject, bodyHTML, senderAddress, recepinetsList, 5, AMService.PriorityEnum.Normal, null, serviceName);
             mailClient.Close();
             sr.Close();
-            sr.Dispose();
-
-            //MailMessage myEmail = new MailMessage();
-            //SmtpClient smtpClient = new SmtpClient("mail.aemedia.ru");
-            //smtpClient.UseDefaultCredentials = true;
-
-            ////Add recepients
-            //myEmail.To.Add("dmitry.mironov@dentsuaegis.ru");
-
-            ////Set email properties
-            //myEmail.From = new MailAddress("dmitry.mironov@dentsuaegis.ru");
-            //myEmail.Subject = "TP Daily Recap";
-            //myEmail.IsBodyHtml = true;
-            //myEmail.Body = "<h1>Email Notice!</h1><p>Hi there!</p><p>This is the body of the email. I hope it's helpful!</p><p>-Mr. Example </p>";
-
-            //smtpClient.Send(myEmail);
+            sr.Dispose();           
         }
 
     }
