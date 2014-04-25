@@ -64,14 +64,13 @@ namespace TPDailyRecapLight
                 //for each project check if there are any  userstories or bugs modified on this report date
                 foreach(Project project in projectsCollection.Items)
                 {
-                    //StreamReader sr = new StreamReader(ReportPath + "Project_top.html");
                     StreamReader sr = new StreamReader(ReportPath + "Project_Header.html");
                     String content = sr.ReadToEnd();
 
 
                     UserStoriesCollection userStoriesCollection = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate eq '" + reportDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json"));
                     BugsCollection bugsCollection = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate eq '" + reportDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json"));
-                    //Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]
+
                     //check that we got at least one user story
                     if (userStoriesCollection.Items.Count > 0 || bugsCollection.Items.Count > 0)
                     { 
@@ -93,7 +92,7 @@ namespace TPDailyRecapLight
                             if (uc_Completed.Count > 0 || bugs_Completed.Count > 0)
                             {
                                 //add Section to report
-                                //sr = new StreamReader(ReportPath + "Section_Header.html");
+ 
                                 sr = new StreamReader(ReportPath + "Section_Header.html");
                                 content = sr.ReadToEnd();
                                 content = content.Replace("##SectionName##", "Выполнено");
@@ -157,7 +156,7 @@ namespace TPDailyRecapLight
                         {
                             List<UserStory> uc_Added = userStoriesCollection.Items.Where(us => (us.EndDate.HasValue ? false: us.CreateDate.Value.Date.Equals(reportDate.Date))).ToList<UserStory>();
                             List<Bug> bugs_Added = bugsCollection.Items.Where(bug => (bug.EndDate.HasValue?false: bug.CreateDate.Value.Date.Equals(reportDate.Date))).ToList<Bug>();
-                            //(us => (us.EndDate.HasValue ? us.EndDate.Value.Date.Equals(reportDate.Date):false))
+
                             if (uc_Added.Count > 0 || bugs_Added.Count >0)
                             {
                                 //add Section to report
@@ -243,7 +242,6 @@ namespace TPDailyRecapLight
 
         private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperAndEffort, String description, StreamWriter sw)
         {            
-                //StreamReader sr = new StreamReader(ReportPath + "UserStory.html");
                 StreamReader sr = new StreamReader(ReportPath + "EntityRecord.html");
                 String content = sr.ReadToEnd();
 
@@ -298,7 +296,6 @@ namespace TPDailyRecapLight
         private static void SendEmail()
         {
             String subject = "TP Daily Recap";
-            //String bodyHTML = "<h1>Email Notice!</h1><p>Hi there!</p><p>This is the body of the email. I hope it's helpful!</p><p>-Mr. Example </p>";
             String senderAddress = "tpnotification@dentsuaegis.ru";
             String recepinetsList = "dmitry.mironov@dentsuaegis.ru";
             String serviceName = "TPDailyRecap";
