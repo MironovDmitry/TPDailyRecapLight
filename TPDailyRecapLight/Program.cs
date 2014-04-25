@@ -211,13 +211,14 @@ namespace TPDailyRecapLight
                 String EntityName = story.Name;
                 String EntityType = "UserStory";
                 String EntityDeveloperAndEffort = "Прогресс: " + progressInt(story.EffortCompleted, story.Effort).ToString() + "% &emsp;&emsp; Разработчик: " + (story.Assignments.Items.Count > 0 ? story.Assignments.Items[0].GeneralUser.ToString() : "Не назначен");
+                String AssignedUserID = story.Assignments.Items[0].GeneralUser.Id.ToString();
                 string description = "";
                 if (story.Description != null && story.Description.Length > 0)
                 {
                     description = HttpUtility.HtmlDecode(StripHTML(story.Description));
                 }
 
-                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveloperAndEffort, description, sw);                
+                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveloperAndEffort, AssignedUserID, description, sw);                
             }
             
         }
@@ -229,18 +230,19 @@ namespace TPDailyRecapLight
                 String EntityName = bug.Name;
                 String EntityType = "Bug";
                 String EntityDeveloperAndEffort = "Прогресс: " + progressInt(bug.EffortCompleted, bug.Effort).ToString() + "% &emsp;&emsp; Разработчик: " + (bug.Assignments.Items.Count > 0 ? bug.Assignments.Items[0].GeneralUser.ToString() : "Не назначен");
+                String AssignedUserID = bug.Assignments.Items[0].GeneralUser.Id.ToString();
                 string description = "";
                 if (bug.Description != null && bug.Description.Length > 0)
                 {
                     description = HttpUtility.HtmlDecode(StripHTML(bug.Description));
                 }
 
-                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveloperAndEffort, description, sw);
+                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveloperAndEffort, AssignedUserID, description, sw);
             }
 
         }
 
-        private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperAndEffort, String description, StreamWriter sw)
+        private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperAndEffort, String AssignedUserID, String description, StreamWriter sw)
         {            
                 StreamReader sr = new StreamReader(ReportPath + "EntityRecord.html");
                 String content = sr.ReadToEnd();
@@ -256,6 +258,7 @@ namespace TPDailyRecapLight
                 }
                 content = content.Replace("##ImageWidth##", imageWidth.ToString());
                 content = content.Replace("##EntityDeveloperAndEffort##", EntityDeveloperAndEffort);
+                content = content.Replace("##AssignedUserID", AssignedUserID);
             
                 content = content.Replace("##EntityDescriptrion##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : ""));
                 sw.Write(content);
