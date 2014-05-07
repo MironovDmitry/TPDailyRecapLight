@@ -57,6 +57,9 @@ namespace TPDailyRecapLight
             //get collection of projects
             ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=IsActive%20eq%20%27true%27&take=1000&format=json"));
 
+            //project acid property
+            String acid = "";
+
             Console.WriteLine("Total projects: " + projectsCollection.Items.Count());
             //check that projec collection has at least one project
             if (projectsCollection.Items.Count > 0)
@@ -74,6 +77,9 @@ namespace TPDailyRecapLight
                     //check that we got at least one user story
                     if (userStoriesCollection.Items.Count > 0 || bugsCollection.Items.Count > 0)
                     {
+                        //get project acid
+                        ProjectContext projectContext = JsonConvert.DeserializeObject<ProjectContext>(client.DownloadString(PathToTp + "Context/?ids=" + project.Id + "&format=json"));  
+                      
                         //Add report section to output file                        
                         content = content.Replace("##ProjectName##", project.Name);
                         //add project owner
@@ -100,11 +106,11 @@ namespace TPDailyRecapLight
                                 sr.Close();
                                 if (uc_Completed.Count > 0)
                                 {
-                                    AddRecordsToReport(uc_Completed, sw);
+                                    AddRecordsToReport(uc_Completed, sw, projectContext.Acid);
                                 }
                                 if (bugs_Completed.Count > 0)
                                 {
-                                    AddRecordsToReport(bugs_Completed, sw);
+                                    AddRecordsToReport(bugs_Completed, sw, projectContext.Acid);
                                 }
 
                                 //add status footer
@@ -133,11 +139,11 @@ namespace TPDailyRecapLight
                                 sr.Close();
                                 if (uc_Modified.Count > 0)
                                 {
-                                    AddRecordsToReport(uc_Modified, sw);
+                                    AddRecordsToReport(uc_Modified, sw, projectContext.Acid);
                                 }
                                 if (bugs_Modified.Count > 0)
                                 {
-                                    AddRecordsToReport(bugs_Modified, sw);
+                                    AddRecordsToReport(bugs_Modified, sw, projectContext.Acid);
                                 }
 
                                 //add status footer
@@ -168,11 +174,11 @@ namespace TPDailyRecapLight
 
                                 if (uc_Added.Count > 0)
                                 {
-                                    AddRecordsToReport(uc_Added, sw);
+                                    AddRecordsToReport(uc_Added, sw, projectContext.Acid);
                                 }
                                 if (bugs_Added.Count > 0)
                                 {
-                                    AddRecordsToReport(bugs_Added, sw);
+                                    AddRecordsToReport(bugs_Added, sw, projectContext.Acid);
                                 }
 
                                 //add status footer
@@ -203,7 +209,7 @@ namespace TPDailyRecapLight
 
         }
 
-        private static void AddRecordsToReport(List<UserStory> userStories, StreamWriter sw)
+        private static void AddRecordsToReport(List<UserStory> userStories, StreamWriter sw, String acid)
         {
             foreach (UserStory story in userStories)
             {
@@ -214,7 +220,7 @@ namespace TPDailyRecapLight
                 //String EntityPercentCompleted = progressInt(story.EffortCompleted, story.Effort).ToString();
                 String EntityEffortCompleted = story.EffortCompleted.ToString();
                 String EntityEffortRemain = story.EffortToDo.ToString();
-                String EntityDeveoperName = "";
+                String EntityDeveoperName = "";                
                 String AssignedUserID = "";
                 if (story.Assignments.Items.Count > 0)
                 {
@@ -232,11 +238,11 @@ namespace TPDailyRecapLight
                     description = HttpUtility.HtmlDecode(StripHTML(story.Description));
                 }
 
-                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(story.EffortCompleted, story.Effort), AssignedUserID, description, sw);
+                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(story.EffortCompleted, story.Effort), AssignedUserID, description, sw, acid);
             }
 
         }
-        private static void AddRecordsToReport(List<Bug> bugs, StreamWriter sw)
+        private static void AddRecordsToReport(List<Bug> bugs, StreamWriter sw, String acid)
         {
             foreach (Bug bug in bugs)
             {
@@ -247,7 +253,7 @@ namespace TPDailyRecapLight
                 //String EntityPercentCompleted = progressInt(bug.EffortCompleted, bug.Effort).ToString();
                 String EntityEffortCompleted = bug.EffortCompleted.ToString();
                 String EntityEffortRemain = bug.EffortToDo.ToString();
-                String EntityDeveoperName = "";
+                String EntityDeveoperName = "";                
                 String AssignedUserID = "";
                 if (bug.Assignments.Items.Count > 0)
                 {
@@ -265,12 +271,12 @@ namespace TPDailyRecapLight
                     description = HttpUtility.HtmlDecode(StripHTML(bug.Description));
                 }
 
-                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(bug.EffortCompleted, bug.Effort), AssignedUserID, description, sw);
+                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(bug.EffortCompleted, bug.Effort), AssignedUserID, description, sw, acid);
             }
 
         }
 
-        private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperName, String EntityEffortCompleted, String EntityEffortRemain, int Progress, String AssignedUserID, String description, StreamWriter sw)
+        private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperName, String EntityEffortCompleted, String EntityEffortRemain, int Progress, String AssignedUserID, String description, StreamWriter sw, String acid)
         {
             StreamReader sr = new StreamReader(ReportPath + "Entity_Record_Fixed.html");
             String content = sr.ReadToEnd();
@@ -291,6 +297,8 @@ namespace TPDailyRecapLight
             content = content.Replace("##effortCompleted##", EntityEffortCompleted);
             content = content.Replace("##effortRemain##", EntityEffortRemain);
             content = content.Replace("##AssignedUserID", AssignedUserID);
+            content = content.Replace("##acid##", acid);
+            content = content.Replace("##entityID##", EntityId.ToString());
             //content = content.Replace("##ProgressWidth##", Progress);
             //#728397
             if (Progress > 0)
