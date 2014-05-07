@@ -86,7 +86,12 @@ namespace TPDailyRecapLight
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public Owner Owner { get; set; }
+        public Owner Owner { get; set; }        
+    }
+
+    public class ProjectContext
+    {
+        public string Acid { get; set; }
     }
 
     public class ProjectsCollection
