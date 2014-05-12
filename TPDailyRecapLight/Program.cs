@@ -327,7 +327,7 @@ namespace TPDailyRecapLight
                     daysMinus = 2;
                     break;
                 case DayOfWeek.Monday:
-                    daysMinus = 4;
+                    daysMinus = 3;
                     break;
                 default:
                     daysMinus = 1;
