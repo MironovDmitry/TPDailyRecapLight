@@ -214,6 +214,7 @@ namespace TPDailyRecapLight
                 //String EntityPercentCompleted = progressInt(story.EffortCompleted, story.Effort).ToString();
                 String EntityEffortCompleted = story.EffortCompleted.ToString();
                 String EntityEffortRemain = story.EffortToDo.ToString();
+                String EntityState = story.EntityState.Name;
                 String EntityDeveoperName = "";
                 String AssignedUserID = "";
                 if (story.Assignments.Items.Count > 0)
@@ -232,7 +233,7 @@ namespace TPDailyRecapLight
                     description = HttpUtility.HtmlDecode(StripHTML(story.Description));
                 }
 
-                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(story.EffortCompleted, story.Effort), AssignedUserID, description, sw);
+                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityState, EntityEffortCompleted, EntityEffortRemain, progressInt(story.EffortCompleted, story.Effort), AssignedUserID, description, sw);
             }
 
         }
@@ -248,6 +249,7 @@ namespace TPDailyRecapLight
                 String EntityEffortCompleted = bug.EffortCompleted.ToString();
                 String EntityEffortRemain = bug.EffortToDo.ToString();
                 String EntityDeveoperName = "";
+                String EntityState = bug.EntityState.Name;
                 String AssignedUserID = "";
                 if (bug.Assignments.Items.Count > 0)
                 {
@@ -265,12 +267,12 @@ namespace TPDailyRecapLight
                     description = HttpUtility.HtmlDecode(StripHTML(bug.Description));
                 }
 
-                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(bug.EffortCompleted, bug.Effort), AssignedUserID, description, sw);
+                WriteEntityToReport(EntityID, EntityName, EntityType, EntityDeveoperName, EntityState, EntityEffortCompleted, EntityEffortRemain, progressInt(bug.EffortCompleted, bug.Effort), AssignedUserID, description, sw);
             }
 
         }
 
-        private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperName, String EntityEffortCompleted, String EntityEffortRemain, int Progress, String AssignedUserID, String description, StreamWriter sw)
+        private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityDeveloperName, String EntityState, String EntityEffortCompleted, String EntityEffortRemain, int Progress, String AssignedUserID, String description, StreamWriter sw)
         {
             StreamReader sr = new StreamReader(ReportPath + "Entity_Record_Fixed.html");
             String content = sr.ReadToEnd();
@@ -291,6 +293,7 @@ namespace TPDailyRecapLight
             content = content.Replace("##effortCompleted##", EntityEffortCompleted);
             content = content.Replace("##effortRemain##", EntityEffortRemain);
             content = content.Replace("##AssignedUserID", AssignedUserID);
+            content = content.Replace("##EntityState##", EntityState);
             //content = content.Replace("##ProgressWidth##", Progress);
             //#728397
             if (Progress > 0)
@@ -324,7 +327,7 @@ namespace TPDailyRecapLight
                     daysMinus = 2;
                     break;
                 case DayOfWeek.Monday:
-                    daysMinus = 3;
+                    daysMinus = 4;
                     break;
                 default:
                     daysMinus = 1;
