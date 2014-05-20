@@ -298,7 +298,7 @@ namespace TPDailyRecapLight
             content = content.Replace("##effortRemain##", EntityEffortRemain);
             content = content.Replace("##AssignedUserID", AssignedUserID);
             content = content.Replace("##acid##", acid);
-            content = content.Replace("##entityID##", EntityId.ToString());
+            content = content.Replace("##entityID##", EntityId.ToString()); 
             //content = content.Replace("##ProgressWidth##", Progress);
             //#728397
             if (Progress > 0)
