@@ -147,5 +147,60 @@ namespace TPDailyRecapLight
         public string Next { get; set; }
         public List<Bug> Items { get; set; }
     }
+
+    
+
+    public class Release
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+   
+    public class Priority
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+    }
+
+   
+    public class Feature
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public DateTime CreateDate { get; set; }
+        public DateTime ModifyDate { get; set; }
+        public DateTime? LastCommentDate { get; set; }
+        public string Tags { get; set; }
+        public double NumericPriority { get; set; }
+        public double Effort { get; set; }
+        public double EffortCompleted { get; set; }
+        public double EffortToDo { get; set; }
+        public double TimeSpent { get; set; }
+        public double? TimeRemain { get; set; }
+        public DateTime? PlannedStartDate { get; set; }
+        public DateTime? PlannedEndDate { get; set; }
+        public double InitialEstimate { get; set; }
+        public EntityType EntityType { get; set; }
+        public Owner Owner { get; set; }
+        
+        public Project Project { get; set; }
+        public Release Release { get; set; }
+        public object Iteration { get; set; }
+        public object TeamIteration { get; set; }
+        
+        public Priority Priority { get; set; }
+        public EntityState EntityState { get; set; }
+        public List<object> CustomFields { get; set; }
+    }
+
+    public class FeaturesCollection
+    {
+        public string Next { get; set; }
+        public List<Feature> Items { get; set; }
+    }
 }
 

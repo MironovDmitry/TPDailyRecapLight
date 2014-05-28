@@ -55,7 +55,7 @@ namespace TPDailyRecapLight
         private static void StartBuidingReport(WebClient client, DateTime reportDate, StreamWriter sw)
         {
             //get collection of projects
-            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=IsActive%20eq%20%27true%27&take=1000&format=json"));
+            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=(IsActive eq 'true') and (id ne 1710)&take=1000&format=json"));
 
             //project acid property
             String acid = "";
