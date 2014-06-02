@@ -22,12 +22,7 @@ namespace TPDailyRecapLight
         public int Id { get; set; }
         public string Name { get; set; }
     }
-
-    public class Feature
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-    }
+    
 
     public class AssignmentsCollection
     {
@@ -185,13 +180,11 @@ namespace TPDailyRecapLight
         public DateTime? PlannedEndDate { get; set; }
         public double InitialEstimate { get; set; }
         public EntityType EntityType { get; set; }
-        public Owner Owner { get; set; }
-        
+        public Owner Owner { get; set; }        
         public Project Project { get; set; }
         public Release Release { get; set; }
         public object Iteration { get; set; }
-        public object TeamIteration { get; set; }
-        
+        public object TeamIteration { get; set; }        
         public Priority Priority { get; set; }
         public EntityState EntityState { get; set; }
         public List<object> CustomFields { get; set; }
