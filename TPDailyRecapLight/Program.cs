@@ -16,8 +16,9 @@ namespace TPDailyRecapLight
     class Program
     {
         private const string PathToTp = "https://targetprocess.aemedia.ru/TargetProcess2/api/v1/";
-        //private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\dailyrecap\dailyrecap\";
-        private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\DailyRecapLight\";
+        //private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\DailyRecapLight\";
+        private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\TP_Daily_Recap_v2\TPDRv2\";
+        private const bool DebugModeOn = true;
 
         static void Main(string[] args)
         {
@@ -28,20 +29,21 @@ namespace TPDailyRecapLight
 
             //create Streamwriter to write html to report file
             //open report top part
-            StreamWriter reportFile = new StreamWriter(@"c:\temp\report.html", false, Encoding.UTF8);
+            StreamWriter reportFile = new StreamWriter(@"c:\temp\report2.html", false, Encoding.UTF8);
 
             //add report header
-            StreamReader sr = new StreamReader(ReportPath + "Report_Header_Fixed.html");
+            StreamReader sr = new StreamReader(ReportPath + "Report_Header.html");
 
             //update report date in the output report file
             string content = sr.ReadToEnd();
-            content = content.Replace("##ReportDate##", reportDate().ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
+            content = content.Replace("##ReportStartDate##", reportDate().ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
+            content = content.Replace("##ReportEndDate##", reportDate().ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
             reportFile.Write(content);
 
-            StartBuidingReport(client, reportDate(), reportFile);
+            StartBuidingReport(client, reportDate(), reportDate(), reportFile);
 
             //add report footer
-            sr = new StreamReader(ReportPath + "Report_Footer_Fixed.html");
+            sr = new StreamReader(ReportPath + "Report_Footer.html");
             content = sr.ReadToEnd();
             reportFile.Write(content);
 
@@ -52,163 +54,156 @@ namespace TPDailyRecapLight
             //SendEmail();
         }
 
-        private static void StartBuidingReport(WebClient client, DateTime reportDate, StreamWriter sw)
+        private static void StartBuidingReport(WebClient client, DateTime reportStartDate, DateTime reportEndDate, StreamWriter sw)
         {
+            bool projectAdded2Report = false;
             //get collection of projects
-            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=(IsActive eq 'true') and (id ne 1710)&take=1000&format=json"));
+            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=(IsActive eq 'true') and (id ne 1710)&take=1000&format=json")); //excelude Dmitry Mironov's personal tasks
 
             //project acid property
-            String acid = "";
+            //String acid = "";
 
-            Console.WriteLine("Total projects: " + projectsCollection.Items.Count());
+            ShowInConsole("Total projects: " + projectsCollection.Items.Count());
+            
             //check that projec collection has at least one project
             if (projectsCollection.Items.Count > 0)
             {
-                //for each project check if there are any  userstories or bugs modified on this report date
+                //for each project check if there are any  userstories or bugs 
                 foreach (Project project in projectsCollection.Items)
                 {
-                    StreamReader sr = new StreamReader(ReportPath + "Project_Header_Fixed.html");
-                    String content = sr.ReadToEnd();
+                    //get project acid
+                    ShowInConsole("Getting project ACID.");
+                    ProjectContext projectContext = JsonConvert.DeserializeObject<ProjectContext>(client.DownloadString(PathToTp + "Context/?ids=" + project.Id + "&format=json"));
 
+                    ShowInConsole("Start processing project : " + project.Id + " : " + project.Name);                    
 
-                    UserStoriesCollection userStoriesCollection = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate eq '" + reportDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json"));
-                    BugsCollection bugsCollection = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate eq '" + reportDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json"));
+                    //preparing all collections we need for the report
 
-                    //check that we got at least one user story
-                    if (userStoriesCollection.Items.Count > 0 || bugsCollection.Items.Count > 0)
+                    ShowInConsole("Selecting US and Bugs that had been completed during report period.");                    
+                    UserStoriesCollection userStoriesCollection_Done = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "') and (EntityState.Name eq 'Done')&take=1000&format=json"));
+                    BugsCollection bugsCollection_Done = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "') and (EntityState.Name eq 'Done')&take=1000&format=json"));
+                    UserStoriesCollection userStoriesCollection_R2R = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.Name eq 'Ready to release')&take=1000&format=json"));
+                    BugsCollection bugsCollection_R2R = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.Name eq 'Ready to release')&take=1000&format=json"));
+                    UserStoriesCollection userStoriesCollection_InProgress = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')&take=1000&format=json"));
+                    BugsCollection bugsCollection_InProgress = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')&take=1000&format=json"));
+                    
+                    ShowInConsole("Checking that we have at lease one entity to show in the report:");
+                    //check that we got at least one user story or bug that had been completed or ready to release
+                    if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0 || userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
                     {
-                        //get project acid
-                        ProjectContext projectContext = JsonConvert.DeserializeObject<ProjectContext>(client.DownloadString(PathToTp + "Context/?ids=" + project.Id + "&format=json"));  
-                      
-                        //Add report section to output file                        
-                        content = content.Replace("##ProjectName##", project.Name);
-                        //add project owner
-                        content = content.Replace("##ProjectOwner##", project.Owner.ToString());
-                        //TO-DO: Add project owner to the report
-                        //content = content.Replace("##ProjectOwner##", project.Owner.ToString());
-                        sw.Write(content);
-                        sr.Close();
+                        ShowInConsole("At least one entity should be added to the report.");
 
-                        //process project and userstories
-                        //get stories lists by status                        
-                        try
+                        AddProjectHeaderToReport(project, sw);
+                        projectAdded2Report = true;
+
+                        if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0)
                         {
-                            List<UserStory> uc_Completed = userStoriesCollection.Items.Where(us => (us.EndDate.HasValue ? us.EndDate.Value.Date.Equals(reportDate.Date) : false)).ToList<UserStory>();
-                            List<Bug> bugs_Completed = bugsCollection.Items.Where(bug => (bug.EndDate.HasValue ? bug.EndDate.Value.Date.Equals(reportDate.Date) : false)).ToList<Bug>();
-                            if (uc_Completed.Count > 0 || bugs_Completed.Count > 0)
+                            AddSectionHeaderToReport("Выполнено", sw);
+
+                            //adding completed entities                       
+                            if (userStoriesCollection_Done.Items.Count > 0)
                             {
-                                //add Section to report
-
-                                sr = new StreamReader(ReportPath + "Section_Header_Fixed.html");
-                                content = sr.ReadToEnd();
-                                content = content.Replace("##SectionName##", "Выполнено");
-                                sw.Write(content);
-                                sr.Close();
-                                if (uc_Completed.Count > 0)
-                                {
-                                    AddRecordsToReport(uc_Completed, sw, projectContext.Acid);
-                                }
-                                if (bugs_Completed.Count > 0)
-                                {
-                                    AddRecordsToReport(bugs_Completed, sw, projectContext.Acid);
-                                }
-
-                                //add status footer
-                                sr = new StreamReader(ReportPath + "Section_Footer_Fixed.html");
-                                content = sr.ReadToEnd();
-                                sw.Write(content);
-                                sr.Close();
+                                AddRecordsToReport(userStoriesCollection_Done.Items.ToList<UserStory>(), sw, projectContext.Acid);
                             }
-                        }
-                        catch (Exception e)
-                        {
 
-                        }
-
-                        try
-                        {
-                            List<UserStory> uc_Modified = userStoriesCollection.Items.Where(us => (us.ModifyDate.HasValue ? us.ModifyDate.Value.Date.Equals(reportDate.Date) : false) && us.EntityState.Name != "Done" && us.CreateDate.Value.Date.CompareTo(reportDate.Date) != 0).ToList<UserStory>();
-                            List<Bug> bugs_Modified = bugsCollection.Items.Where(bug => (bug.ModifyDate.HasValue ? bug.ModifyDate.Value.Date.Equals(reportDate.Date) : false) && bug.EntityState.Name != "Done" && bug.CreateDate.Value.Date.CompareTo(reportDate.Date) != 0).ToList<Bug>();
-                            if (uc_Modified.Count > 0 || bugs_Modified.Count > 0)
+                            if (bugsCollection_Done.Items.Count > 0)
                             {
-                                //add Section to report
-                                sr = new StreamReader(ReportPath + "Section_Header_Fixed.html");
-                                content = sr.ReadToEnd();
-                                content = content.Replace("##SectionName##", "Изменено");
-                                sw.Write(content);
-                                sr.Close();
-                                if (uc_Modified.Count > 0)
-                                {
-                                    AddRecordsToReport(uc_Modified, sw, projectContext.Acid);
-                                }
-                                if (bugs_Modified.Count > 0)
-                                {
-                                    AddRecordsToReport(bugs_Modified, sw, projectContext.Acid);
-                                }
-
-                                //add status footer
-                                sr = new StreamReader(ReportPath + "Section_Footer_Fixed.html");
-                                content = sr.ReadToEnd();
-                                sw.Write(content);
-                                sr.Close();
+                                AddRecordsToReport(bugsCollection_Done.Items.ToList<Bug>(), sw, projectContext.Acid);
                             }
-                        }
-                        catch (Exception e)
-                        {
 
-                        }
-
-                        try
-                        {
-                            List<UserStory> uc_Added = userStoriesCollection.Items.Where(us => (us.EndDate.HasValue ? false : us.CreateDate.Value.Date.Equals(reportDate.Date))).ToList<UserStory>();
-                            List<Bug> bugs_Added = bugsCollection.Items.Where(bug => (bug.EndDate.HasValue ? false : bug.CreateDate.Value.Date.Equals(reportDate.Date))).ToList<Bug>();
-
-                            if (uc_Added.Count > 0 || bugs_Added.Count > 0)
+                            if (userStoriesCollection_R2R.Items.Count > 0)
                             {
-                                //add Section to report
-                                sr = new StreamReader(ReportPath + "Section_Header_Fixed.html");
-                                content = sr.ReadToEnd();
-                                content = content.Replace("##SectionName##", "Добавлено");
-                                sw.Write(content);
-                                sr.Close();
-
-                                if (uc_Added.Count > 0)
-                                {
-                                    AddRecordsToReport(uc_Added, sw, projectContext.Acid);
-                                }
-                                if (bugs_Added.Count > 0)
-                                {
-                                    AddRecordsToReport(bugs_Added, sw, projectContext.Acid);
-                                }
-
-                                //add status footer
-                                sr = new StreamReader(ReportPath + "Section_Footer_Fixed.html");
-                                content = sr.ReadToEnd();
-                                sw.Write(content);
-                                sr.Close();
+                                AddRecordsToReport(userStoriesCollection_R2R.Items.ToList<UserStory>(), sw, projectContext.Acid);
                             }
-                        }
-                        catch (Exception e)
-                        {
 
-                        }
+                            if (bugsCollection_R2R.Items.Count > 0)
+                            {
+                                AddRecordsToReport(bugsCollection_R2R.Items.ToList<Bug>(), sw, projectContext.Acid);
+                            }
 
-                        //add project_footer
-                        sr = new StreamReader(ReportPath + "Project_Footer_Fixed.html");
-                        content = sr.ReadToEnd();
-                        sw.Write(content);
-                        sr.Close();
+                            AddSectionFooterToReport(sw);
+                        }
                     }
-                }
+                                                            
+                    //check that we have at least one entity to add to the report
+                    if (userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
+                    {
+                        AddSectionHeaderToReport("В процессе", sw);
+                        
+                        if (userStoriesCollection_InProgress.Items.Count > 0)
+                        { 
+                            AddRecordsToReport(userStoriesCollection_InProgress.Items.ToList<UserStory>(), sw, projectContext.Acid); 
+                        }
+
+                        if (bugsCollection_InProgress.Items.Count > 0)
+                        {
+                            AddRecordsToReport(bugsCollection_InProgress.Items.ToList<Bug>(), sw, projectContext.Acid); 
+                        }
+
+                        AddSectionFooterToReport(sw);
+                    }
+
+                    if (projectAdded2Report)
+                    { 
+                        AddProjectFooterToReport(sw);
+                        projectAdded2Report = false;
+                    }
+                    
+                }            
 
             }
             else
             {
                 //TO-DO: add infor to the report that no projects had been modified for this day.
             }
+    }
 
+        private static void AddProjectHeaderToReport(Project project, StreamWriter sw)
+        {
+            //Add report section to output file    
+
+            StreamReader sr = new StreamReader(ReportPath + "Project_Header.html");
+            String content = sr.ReadToEnd();
+
+            content = content.Replace("##ProjectName##", project.Name);
+            //add project owner
+            content = content.Replace("##ProjectOwner##", project.Owner.ToString());
+            sw.Write(content);
+            sr.Close();
         }
+        private static void AddProjectFooterToReport(StreamWriter sw)
+        {
+            //add project_footer
+            StreamReader sr = new StreamReader(ReportPath + "Project_Footer.html");
+            String content = sr.ReadToEnd();
+            sw.Write(content);
+            sr.Close();  
+        }
+        private static void AddSectionHeaderToReport(String SectionName, StreamWriter sw)
+        {
+            StreamReader sr = new StreamReader(ReportPath + "Section_Header.html");
+            String content = sr.ReadToEnd();
+            content = content.Replace("##SectionName##", SectionName);
+            sw.Write(content);
+            sr.Close();
 
+            sr = new StreamReader(ReportPath + "Entities_Header.html");
+            content = sr.ReadToEnd();
+            sw.Write(content);
+            sr.Close();
+        }
+        private static void AddSectionFooterToReport(StreamWriter sw)
+        {
+            StreamReader sr = new StreamReader(ReportPath + "Entities_Footer.html");
+            String content = sr.ReadToEnd();
+            sw.Write(content);
+            sr.Close();
+            //add status footer
+            sr = new StreamReader(ReportPath + "Section_Footer.html");
+            content = sr.ReadToEnd();
+            sw.Write(content);
+            sr.Close();
+        }
         private static void AddRecordsToReport(List<UserStory> userStories, StreamWriter sw, String acid)
         {
             foreach (UserStory story in userStories)
@@ -280,10 +275,11 @@ namespace TPDailyRecapLight
 
         private static void WriteEntityToReport(int EntityId, String EntityName, String EntityType, String EntityState, String EntityDeveloperName, String EntityEffortCompleted, String EntityEffortRemain, int Progress, String AssignedUserID, String description, StreamWriter sw, String acid)
         {
-            StreamReader sr = new StreamReader(ReportPath + "Entity_Record_Fixed.html");
+            StreamReader sr = new StreamReader(ReportPath + "Entity_Record.html");
             String content = sr.ReadToEnd();
 
-            content = content.Replace("##EntityName##", EntityId + " : " + EntityName);
+            content = content.Replace("##EntityID##", EntityId.ToString());
+            content = content.Replace("##EntityName##", EntityName);
             content = content.Replace("##EntityType##", EntityType);
             int imageWidth = 38;
             switch (EntityType)
@@ -355,7 +351,7 @@ namespace TPDailyRecapLight
             String senderAddress = "tpnotification@dentsuaegis.ru";
             String recepinetsList = "dmitry.mironov@dentsuaegis.ru";
             String serviceName = "TPDailyRecap";
-            StreamReader sr = new StreamReader(@"c:\temp\report.html");
+            StreamReader sr = new StreamReader(@"c:\temp\report2.html");
             String bodyHTML = sr.ReadToEnd();
 
             var mailClient = new AMService.AMServiceClient();
@@ -365,6 +361,13 @@ namespace TPDailyRecapLight
             sr.Dispose();
         }
 
+        private static void ShowInConsole(String s)
+        {
+            if (DebugModeOn)
+            {
+                Console.WriteLine(s);
+            }
+        }
     }
 }
 
