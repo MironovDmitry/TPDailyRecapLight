@@ -86,16 +86,22 @@ namespace TPDailyRecapLight
                     BugsCollection bugsCollection_R2R = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.Name eq 'Ready to release')&take=1000&format=json"));
                     UserStoriesCollection userStoriesCollection_InProgress = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')&take=1000&format=json"));
                     BugsCollection bugsCollection_InProgress = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')&take=1000&format=json"));
-                    
+
+                    UserStoriesCollection userStoriesCollection_Planned = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Planned')&take=1000&format=json"));
+                    BugsCollection bugsCollection_Planned = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Planned')&take=1000&format=json"));
+                    //TO-DO: add selection for Scrum projects as well.
+
                     ShowInConsole("Checking that we have at lease one entity to show in the report:");
-                    //check that we got at least one user story or bug that had been completed or ready to release
-                    if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0 || userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
+                    //check that we got at least one user story or bug that need to be added to the report
+                    if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0 || userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0 || userStoriesCollection_Planned.Items.Count > 0 || bugsCollection_Planned.Items.Count > 0)
                     {
                         ShowInConsole("At least one entity should be added to the report.");
 
                         AddProjectHeaderToReport(project, sw);
                         projectAdded2Report = true;
 
+
+                        //Section = Выполнено
                         if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0)
                         {
                             AddSectionHeaderToReport("Выполнено", sw);
@@ -123,30 +129,50 @@ namespace TPDailyRecapLight
 
                             AddSectionFooterToReport(sw);
                         }
-                    }
-                                                            
-                    //check that we have at least one entity to add to the report
-                    if (userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
-                    {
-                        AddSectionHeaderToReport("В процессе", sw);
-                        
-                        if (userStoriesCollection_InProgress.Items.Count > 0)
-                        { 
-                            AddRecordsToReport(userStoriesCollection_InProgress.Items.ToList<UserStory>(), sw, projectContext.Acid); 
-                        }
 
-                        if (bugsCollection_InProgress.Items.Count > 0)
+                        //Section = В работе
+                        if (userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
                         {
-                            AddRecordsToReport(bugsCollection_InProgress.Items.ToList<Bug>(), sw, projectContext.Acid); 
+                            AddSectionHeaderToReport("В процессе", sw);
+
+                            if (userStoriesCollection_InProgress.Items.Count > 0)
+                            {
+                                AddRecordsToReport(userStoriesCollection_InProgress.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                            }
+
+                            if (bugsCollection_InProgress.Items.Count > 0)
+                            {
+                                AddRecordsToReport(bugsCollection_InProgress.Items.ToList<Bug>(), sw, projectContext.Acid);
+                            }
+
+                            AddSectionFooterToReport(sw);
                         }
 
-                        AddSectionFooterToReport(sw);
-                    }
 
-                    if (projectAdded2Report)
-                    { 
-                        AddProjectFooterToReport(sw);
-                        projectAdded2Report = false;
+                        //Section = Запланировано
+                        if (userStoriesCollection_Planned.Items.Count > 0 || bugsCollection_Planned.Items.Count > 0)
+                        {
+                            AddSectionHeaderToReport("Запланировано", sw);
+
+                            if (userStoriesCollection_Planned.Items.Count > 0)
+                            {
+                                AddRecordsToReport(userStoriesCollection_Planned.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                            }
+
+                            if (bugsCollection_Planned.Items.Count > 0)
+                            {
+                                AddRecordsToReport(bugsCollection_Planned.Items.ToList<Bug>(), sw, projectContext.Acid);
+                            }
+
+                            AddSectionFooterToReport(sw);
+                        }
+
+                        //Add project footer
+                        if (projectAdded2Report)
+                        {
+                            AddProjectFooterToReport(sw);
+                            projectAdded2Report = false;
+                        }
                     }
                     
                 }            
