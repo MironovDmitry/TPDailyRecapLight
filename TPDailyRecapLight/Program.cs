@@ -17,11 +17,37 @@ namespace TPDailyRecapLight
     {
         private const string PathToTp = "https://targetprocess.aemedia.ru/TargetProcess2/api/v1/";
         //private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\DailyRecapLight\";
-        private const string ReportPath = @"C:\Users\dmitry.mironov\Documents\Visual Studio 2013\Projects\TP_Daily_Recap_v2\TPDRv2\";
+        private const string ReportPath = @"C:\Users\dmiron01.EMEA-MEDIA\Documents\Visual Studio 2013\Projects\TP_Daily_Recap_v2\TPDRv2\";
         private const bool DebugModeOn = true;
 
         static void Main(string[] args)
-        {
+        {              
+            //process passed arguments
+            String rStartDate = DateTime.Today.ToString();
+            String rEndDate = DateTime.Today.ToString();
+
+            if (args.Length == 0)
+            {
+
+            }
+            else
+            {
+                switch (args[0])
+                { 
+                    case "Daily":
+                        rStartDate = DateTime.Today.ToString();
+                        rEndDate = DateTime.Today.ToString();
+                        break;
+                    case "Weekly":
+                        rStartDate = args[1];
+                        rEndDate = DateTime.Parse(args[1]).ToString();
+                        break;
+                    case "Custom":
+                        rStartDate = args[1];
+                        rEndDate = args[2];
+                        break;
+                }                
+            }
             //create web client to get response from webserver
             var client = new WebClient();
             client.UseDefaultCredentials = true;
@@ -36,11 +62,11 @@ namespace TPDailyRecapLight
 
             //update report date in the output report file
             string content = sr.ReadToEnd();
-            content = content.Replace("##ReportStartDate##", reportDate().ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
-            content = content.Replace("##ReportEndDate##", reportDate().ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
+            content = content.Replace("##ReportStartDate##", reportDate(rStartDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
+            content = content.Replace("##ReportEndDate##", reportDate(rEndDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
             reportFile.Write(content);
 
-            StartBuidingReport(client, reportDate(), reportDate(), reportFile);
+            StartBuidingReport(client, reportDate(rStartDate), reportDate(rEndDate), reportFile);
 
             //add report footer
             sr = new StreamReader(ReportPath + "Report_Footer.html");
@@ -51,14 +77,14 @@ namespace TPDailyRecapLight
             reportFile.Close();
             reportFile.Dispose();
 
-            //SendEmail();
+            SendEmail(rStartDate);
         }
 
         private static void StartBuidingReport(WebClient client, DateTime reportStartDate, DateTime reportEndDate, StreamWriter sw)
         {
             bool projectAdded2Report = false;
             //get collection of projects
-            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=(IsActive eq 'true') and (id ne 1710)&take=1000&format=json")); //excelude Dmitry Mironov's personal tasks
+            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?include=[name,id,owner]&where=(IsActive eq 'true') and (id ne 1710) and (id ne 497)&take=1000&format=json")); //excelude Dmitry Mironov's personal tasks
 
             //project acid property
             //String acid = "";
@@ -84,8 +110,35 @@ namespace TPDailyRecapLight
                     BugsCollection bugsCollection_Done = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "') and (EntityState.Name eq 'Done')&take=1000&format=json"));
                     UserStoriesCollection userStoriesCollection_R2R = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.Name eq 'Ready to release')&take=1000&format=json"));
                     BugsCollection bugsCollection_R2R = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.Name eq 'Ready to release')&take=1000&format=json"));
+                    
+                    //Work in Progress
                     UserStoriesCollection userStoriesCollection_InProgress = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')&take=1000&format=json"));
-                    BugsCollection bugsCollection_InProgress = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')&take=1000&format=json"));
+                    List<UserStory> us_WIP = new List<UserStory>();
+                    if (userStoriesCollection_InProgress.Items.Count > 0)
+                    {
+                        //отбираем только измененные за отчетный период стори либо стори, у ктороых были изменены таски.
+                        foreach (UserStory story in userStoriesCollection_InProgress.Items.ToList<UserStory>())
+                        {
+                            if (story.ModifyDate.Date.Equals(reportStartDate.Date))
+                            {                                
+                                us_WIP.Add(story);
+                            }
+                            else
+                            {
+                                //сама стори не менялась, проверяем ее таски на изменения
+                                //string s = "tasks?where=(UserStory.id eq " + story.Id + ") and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json";
+                                TasksCollection tc = JsonConvert.DeserializeObject<TasksCollection>(client.DownloadString(PathToTp + "tasks?where=(UserStory.id eq " + story.Id + ") and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json"));
+                                if (tc.Items.Count > 0)
+                                {
+                                    //есть таски измененные в отчетный период, добавляем стори в коллекцию                             
+                                    us_WIP.Add(story);
+                                }
+                            }
+                        }   
+                    }
+                    BugsCollection bugsCollection_InProgress = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done') and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "')&take=1000&format=json"));
+                    
+
 
                     UserStoriesCollection userStoriesCollection_Planned = JsonConvert.DeserializeObject<UserStoriesCollection>(client.DownloadString(PathToTp + "UserStories?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Planned')&take=1000&format=json"));
                     BugsCollection bugsCollection_Planned = JsonConvert.DeserializeObject<BugsCollection>(client.DownloadString(PathToTp + "Bugs?include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]]]&where=(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Planned')&take=1000&format=json"));
@@ -93,7 +146,7 @@ namespace TPDailyRecapLight
 
                     ShowInConsole("Checking that we have at lease one entity to show in the report:");
                     //check that we got at least one user story or bug that need to be added to the report
-                    if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0 || userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0 || userStoriesCollection_Planned.Items.Count > 0 || bugsCollection_Planned.Items.Count > 0)
+                    if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0 || us_WIP.Count > 0 || bugsCollection_InProgress.Items.Count > 0 || userStoriesCollection_Planned.Items.Count > 0 || bugsCollection_Planned.Items.Count > 0)
                     {
                         ShowInConsole("At least one entity should be added to the report.");
 
@@ -130,23 +183,26 @@ namespace TPDailyRecapLight
                             AddSectionFooterToReport(sw);
                         }
 
-                        //Section = В работе
-                        if (userStoriesCollection_InProgress.Items.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
+                        //Section = В работе                                                
+                        if (us_WIP.Count > 0 || bugsCollection_InProgress.Items.Count > 0)
                         {
-                            AddSectionHeaderToReport("В процессе", sw);
-
-                            if (userStoriesCollection_InProgress.Items.Count > 0)
+                            AddSectionHeaderToReport("В работе", sw);
+                            
+                            if (us_WIP.Count > 0)
                             {
-                                AddRecordsToReport(userStoriesCollection_InProgress.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                                AddRecordsToReport(us_WIP, sw, projectContext.Acid);
                             }
 
                             if (bugsCollection_InProgress.Items.Count > 0)
                             {
                                 AddRecordsToReport(bugsCollection_InProgress.Items.ToList<Bug>(), sw, projectContext.Acid);
                             }
+                        }                           
 
-                            AddSectionFooterToReport(sw);
-                        }
+
+                        AddSectionFooterToReport(sw);
+
+                        
 
 
                         //Section = Запланировано
@@ -345,10 +401,10 @@ namespace TPDailyRecapLight
         {
             return (Effort == 0 ? 0 : (int)(EffortCompleted / Effort * 100));
         }
-        private static DateTime reportDate()
+        private static DateTime reportDate(String sDate)
         {
             int daysMinus = 1;
-            switch (DateTime.Today.DayOfWeek)
+            switch (DateTime.Parse(sDate).DayOfWeek)
             {
                 case DayOfWeek.Saturday:
                     daysMinus = 1;
@@ -371,9 +427,9 @@ namespace TPDailyRecapLight
             return reg.Replace(HTMLText, "");
         }
 
-        private static void SendEmail()
+        private static void SendEmail(String sReportStartDate)
         {
-            String subject = "TP Daily Recap";
+            String subject = "TP Daily Recap : " + reportDate(sReportStartDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU"));
             String senderAddress = "tpnotification@dentsuaegis.ru";
             String recepinetsList = "dmitry.mironov@dentsuaegis.ru";
             String serviceName = "TPDailyRecap";
