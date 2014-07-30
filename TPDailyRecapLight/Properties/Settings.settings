@@ -1,0 +1,15 @@
+﻿<?xml version='1.0' encoding='utf-8'?>
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="TPDailyRecapLight.Properties" GeneratedClassName="Settings">
+  <Profiles />
+  <Settings>
+    <Setting Name="ResepientsList" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">dmitry.mironov@dentsuaegis.ru</Value>
+    </Setting>
+    <Setting Name="HTMLLocation" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">C:\Users\dmiron01.EMEA-MEDIA\Documents\Visual Studio 2013\Projects\TP_Daily_Recap_v2\TPDRv2\</Value>
+    </Setting>
+    <Setting Name="reportFile" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">c:\temp\report2.html</Value>
+    </Setting>
+  </Settings>
+</SettingsFile>

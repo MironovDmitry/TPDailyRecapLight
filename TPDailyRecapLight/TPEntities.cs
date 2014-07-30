@@ -11,7 +11,7 @@ namespace TPDailyRecapLight
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public String ToString()
+        public override String ToString()
         {
             return FirstName + " " + LastName;
         }
@@ -41,7 +41,7 @@ namespace TPDailyRecapLight
         public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public String ToString()
+        public override String ToString()
         {
             return FirstName + " " + LastName;
         }
