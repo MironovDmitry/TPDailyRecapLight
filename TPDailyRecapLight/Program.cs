@@ -125,7 +125,8 @@ namespace TPDailyRecapLight
                     switch (reportType)
                     { 
                         case "Daily":
-                            queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'User Acceptance Testing') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done') and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "')";
+                            //queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'User Acceptance Testing') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done') and (ModifyDate gte '" + reportStartDate.ToString("yyyy-MM-dd") + "') and (ModifyDate lte '" + reportEndDate.ToString("yyyy-MM-dd") + "') and (CreateDate ne '" + reportStartDate.ToString("yyyy-MM-dd") + "')";
+                            queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'User Acceptance Testing') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done') and (CreateDate ne '" + reportStartDate.ToString("yyyy-MM-dd") + "')";
                             break;
                         case "Weekly":
                             queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name ne 'Open') and (EntityState.name ne 'Planned') and (EntityState.name ne 'User Acceptance Testing') and (EntityState.name ne 'Ready to release') and (EntityState.name ne 'Done')";
