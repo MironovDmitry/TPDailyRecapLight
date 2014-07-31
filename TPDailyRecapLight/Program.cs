@@ -22,14 +22,17 @@ namespace TPDailyRecapLight
         private static String ReportPath = Properties.Settings.Default.HTMLLocation.ToString();
         private static String sHTMLReportFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\report.html";
         private const bool DebugModeOn = true;
-        //private const string token = "&token=MjU6Qjg0REU3MTY0OUQ4RDEyRTBGM0U5Qjg2ODlDNTUzNDE=";
+        
         private const string token = "&token=Mjo5OUJFOUVCQTNEMzNGOEI3MzcyRjg1MzEwRkNGNzZDRQ==";
+
+        private static DateTime reportStartDate;
+        private static DateTime reportEndDate;
 
         static void Main(string[] args)
         {              
             //process passed arguments
-            String rStartDate = DateTime.Today.ToString();
-            String rEndDate = DateTime.Today.ToString();
+            //String rStartDate = DateTime.Today.ToString();
+            //String rEndDate = DateTime.Today.ToString();
             String reportType = "Daily";
 
             if (args.Length == 0)
@@ -41,13 +44,13 @@ namespace TPDailyRecapLight
                 switch (args[0])
                 { 
                     case "Daily":
-                        rStartDate = DateTime.Today.Date.ToString();
-                        rEndDate = DateTime.Today.Date.ToString();
+                        reportStartDate = DateTime.Today.AddDays(-1).Date;
+                        reportEndDate = DateTime.Today.AddDays(-1).Date;
                         reportType = "Daily";
                         break;
                     case "Weekly":
-                        rStartDate = DateTime.Today.AddDays(-7).ToString();
-                        rEndDate = DateTime.Today.AddDays(-1).ToString();                        
+                        reportStartDate = DateTime.Today.AddDays(-7).Date;
+                        reportEndDate = DateTime.Today.AddDays(-1).Date;                        
                         reportType = "Weekly";
                         break;                    
                 }                
@@ -66,11 +69,11 @@ namespace TPDailyRecapLight
 
             //update report date in the output report file
             string content = sr.ReadToEnd();
-            content = content.Replace("##ReportStartDate##", reportDate(rStartDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
-            content = content.Replace("##ReportEndDate##", reportDate(rEndDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
+            content = content.Replace("##ReportStartDate##", reportStartDate.ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
+            content = content.Replace("##ReportEndDate##", reportEndDate.ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")));
             reportFile.Write(content);
 
-            StartBuidingReport(client, reportDate(rStartDate), reportDate(rEndDate), reportFile, reportType);
+            StartBuidingReport(client, reportStartDate, reportEndDate, reportFile, reportType);
 
             //add report footer
             sr = new StreamReader(ReportPath + "Report_Footer.html");
@@ -81,7 +84,7 @@ namespace TPDailyRecapLight
             reportFile.Close();
             reportFile.Dispose();
 
-            SendEmail(rStartDate, rEndDate, reportType);
+            SendEmail(reportStartDate, reportEndDate, reportType);
         }
 
         private static void StartBuidingReport(WebClient client, DateTime reportStartDate, DateTime reportEndDate, StreamWriter sw, String reportType)
@@ -506,35 +509,35 @@ namespace TPDailyRecapLight
         {
             return (Effort == 0 ? 0 : (int)(EffortCompleted / Effort * 100));
         }
-        private static DateTime reportDate(String sDate)
-        {
-            int daysMinus = 1;
-            switch (DateTime.Parse(sDate).DayOfWeek)
-            {
-                case DayOfWeek.Saturday:
-                    daysMinus = 1;
-                    break;
-                case DayOfWeek.Sunday:
-                    daysMinus = 2;
-                    break;
-                case DayOfWeek.Monday:
-                    daysMinus = 3;
-                    break;
-                default:
-                    daysMinus = 1;
-                    break;
-            }
-            return DateTime.Today.AddDays(-daysMinus); ;
-        }
+        //private static DateTime reportDate(String sDate)
+        //{
+        //    int daysMinus = 1;
+        //    switch (DateTime.Parse(sDate).DayOfWeek)
+        //    {
+        //        case DayOfWeek.Saturday:
+        //            daysMinus = 1;
+        //            break;
+        //        case DayOfWeek.Sunday:
+        //            daysMinus = 2;
+        //            break;
+        //        case DayOfWeek.Monday:
+        //            daysMinus = 3;
+        //            break;
+        //        default:
+        //            daysMinus = 1;
+        //            break;
+        //    }
+        //    return DateTime.Today.AddDays(-daysMinus); ;
+        //}
         private static string StripHTML(string HTMLText)
         {
             Regex reg = new Regex("<[^>]+>", RegexOptions.IgnoreCase);
             return reg.Replace(HTMLText, "");
         }
 
-        private static void SendEmail(String sReportStartDate,String sReportEndDate, String reportType)
+        private static void SendEmail(DateTime reportStartDate, DateTime reportEndDate, String reportType)
         {
-            String subject = "TP " + reportType + " Recap : " + reportDate(sReportStartDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")) + (reportType == "Weekly"?" - " + reportDate(sReportEndDate).ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")):"");
+            String subject = "TP " + reportType + " Recap : " + reportStartDate.ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")) + (reportType == "Weekly"?" - " + reportEndDate.ToString("dddd dd MMMM", CultureInfo.CreateSpecificCulture("ru-RU")):"");
             String senderAddress = "tpnotification@dentsuaegis.ru";
             String recepinetsList = Properties.Settings.Default.ResepientsList;
             String serviceName = "TPRecap";
