@@ -80,7 +80,7 @@ namespace TPDailyRecapLight
         public Project Project { get; set; }
         public Release Release { get; set; }
         public object Iteration { get; set; }
-        public object TeamIteration { get; set; }
+        public TeamIteration TeamIteration { get; set; }
         //public Team Team { get; set; }
         public Priority Priority { get; set; }
         public EntityState EntityState { get; set; }
@@ -165,7 +165,7 @@ namespace TPDailyRecapLight
         public Project Project { get; set; }
         //public Release Release { get; set; }
         public object Iteration { get; set; }
-        //public TeamIteration TeamIteration { get; set; }
+        public TeamIteration TeamIteration { get; set; }
         //public Team Team { get; set; }
         //public Priority Priority { get; set; }
         public EntityState EntityState { get; set; }
