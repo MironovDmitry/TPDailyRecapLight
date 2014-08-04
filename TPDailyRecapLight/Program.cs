@@ -347,7 +347,7 @@ namespace TPDailyRecapLight
                         {
                             if (userStoriesCollection_UAT.Items.Count > 0 || bugsCollection_UAT.Items.Count > 0)
                             {
-                                AddSectionHeaderToReport("Добавлено", sw);
+                                AddSectionHeaderToReport("На тестировании у заказчика", sw);
 
                                 if (userStoriesCollection_UAT.Items.Count > 0)
                                 {
