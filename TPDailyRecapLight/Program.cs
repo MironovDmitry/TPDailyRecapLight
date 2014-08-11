@@ -47,8 +47,25 @@ namespace TPDailyRecapLight
                 switch (args[0])
                 { 
                     case "Daily":
-                        reportStartDate = DateTime.Today.AddDays(-1).Date;
-                        reportEndDate = DateTime.Today.AddDays(-1).Date;
+                    Int16 daysMinus = 1;
+
+                    switch (DateTime.Today.DayOfWeek)
+                        {
+                            case DayOfWeek.Saturday:
+                                daysMinus = 1;
+                                break;
+                            case DayOfWeek.Sunday:
+                                daysMinus = 2;
+                                break;
+                            case DayOfWeek.Monday:
+                                daysMinus = 3;
+                                break;
+                            default:
+                                daysMinus = 1;
+                                break;
+                        }
+                        reportStartDate = DateTime.Today.AddDays(-daysMinus).Date;
+                        reportEndDate = DateTime.Today.AddDays(-daysMinus).Date;
                         reportType = "Daily";
                         break;
                     case "Weekly":
