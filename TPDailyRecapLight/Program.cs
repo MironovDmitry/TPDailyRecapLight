@@ -21,8 +21,9 @@ namespace TPDailyRecapLight
         //private const string ReportPath = Properties.Settings.Default.HTMLLocation;
         private static String ReportPath = Properties.Settings.Default.HTMLLocation.ToString();
         private static String sHTMLReportFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\report.html";
+        private static String sHTMLSummaryFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\Summary.html";
         private const bool DebugModeOn = true;
-
+        
         private const String UserStorySelectionFields = "include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]],TeamIteration[Id,Name,StartDate,EndDate]]";
         private const String BugSelectionFields = "include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]],TeamIteration[Id,Name,StartDate,EndDate]]";
         private const String ProjectSelectionFields = "include=[name,id,owner,process]";
@@ -83,7 +84,7 @@ namespace TPDailyRecapLight
             //create Streamwriter to write html to report file
             //open report top part
             StreamWriter reportFile = new StreamWriter(sHTMLReportFile, false, Encoding.UTF8);
-
+            
             //add report header
             StreamReader sr = new StreamReader(ReportPath + "Report_Header.html");
 
@@ -104,11 +105,36 @@ namespace TPDailyRecapLight
             reportFile.Close();
             reportFile.Dispose();
 
+            //add summary to report
+            StreamReader srSummary = new StreamReader(sHTMLSummaryFile);
+            content = srSummary.ReadToEnd();
+            StreamReader srReport = new StreamReader(sHTMLReportFile);
+            String reportContent = srReport.ReadToEnd();            
+            reportContent = reportContent.Replace("##SummarySection##", reportType=="Weekly" ? content : "");
+            reportContent = reportContent.Replace("##SummaryEntryRight##", "&nbsp;");
+            srReport.Close();
+            srReport.Dispose();
+            srSummary.Close();
+            srSummary.Dispose();
+            reportFile = new StreamWriter(sHTMLReportFile, false, Encoding.UTF8);
+            reportFile.Write(reportContent);
+            reportFile.Close();
+            reportFile.Dispose();
+
+
             SendEmail(reportStartDate, reportEndDate, reportType);
         }
 
         private static void StartBuidingReport(WebClient client, DateTime reportStartDate, DateTime reportEndDate, StreamWriter sw, String reportType)
         {
+            //temp file to buid summary section
+            StreamWriter summaryFile = new StreamWriter(sHTMLSummaryFile, false, Encoding.UTF8);
+
+            StreamReader sr = new StreamReader(ReportPath + "Summary_Header.html");
+            String content = sr.ReadToEnd();
+            summaryFile.Write(content);
+            summaryFile.Close();
+
             bool projectAdded2Report = false;
             //get collection of projects
             ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?" + ProjectSelectionFields + "&where=(IsActive eq 'true') and (id ne 1710) and (id ne 497)&take=1000&format=json" + token)); //excelude Dmitry Mironov's personal tasks
@@ -121,6 +147,7 @@ namespace TPDailyRecapLight
             //check that projec collection has at least one project
             if (projectsCollection.Items.Count > 0)
             {
+                bool AddProjectToSummaryLeft = true;
                 //for each project check if there are any  userstories or bugs 
                 foreach (Project project in projectsCollection.Items)
                 {
@@ -240,6 +267,15 @@ namespace TPDailyRecapLight
                     //      Start generating report HTML
                     //*********************************************
 
+                    int bugsCompleted = 0;
+                    int bugsInProgress = 0;
+                    int bugsPlanned = 0;
+                    int bugsUAT = 0;
+                    int userStoryCompleted = 0;
+                    int userStoryInProgress = 0;
+                    int userStoryPlanned = 0;
+                    int userStoryUAT = 0;
+
                     ShowInConsole("Checking that we have at lease one entity to show in the report:");
                     //check that we got at least one user story or bug that need to be added to the report
                     Boolean addProjectToReport = false;
@@ -255,7 +291,7 @@ namespace TPDailyRecapLight
                     {
                         if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0 || us_WIP.Count > 0 || bugsCollection_InProgress.Items.Count > 0 || userStoriesCollection_Planned.Items.Count > 0 || bugsCollection_Planned.Items.Count > 0)
                         {
-                            addProjectToReport = true;
+                            addProjectToReport = true;                            
                         }
                     }
 
@@ -271,26 +307,31 @@ namespace TPDailyRecapLight
                         if (userStoriesCollection_Done.Items.Count > 0 || bugsCollection_Done.Items.Count > 0 || userStoriesCollection_R2R.Items.Count > 0 || bugsCollection_R2R.Items.Count > 0)
                         {
                             AddSectionHeaderToReport("Выполнено", sw);
+                            
 
                             //adding completed entities                       
                             if (userStoriesCollection_Done.Items.Count > 0)
                             {
                                 AddRecordsToReport(userStoriesCollection_Done.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                                userStoryCompleted += userStoriesCollection_Done.Items.Count;
                             }
 
                             if (bugsCollection_Done.Items.Count > 0)
                             {
                                 AddRecordsToReport(bugsCollection_Done.Items.ToList<Bug>(), sw, projectContext.Acid);
+                                bugsCompleted += bugsCollection_Done.Items.Count;
                             }
 
                             if (userStoriesCollection_R2R.Items.Count > 0)
                             {
                                 AddRecordsToReport(userStoriesCollection_R2R.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                                userStoryCompleted += userStoriesCollection_Done.Items.Count;
                             }
 
                             if (bugsCollection_R2R.Items.Count > 0)
                             {
                                 AddRecordsToReport(bugsCollection_R2R.Items.ToList<Bug>(), sw, projectContext.Acid);
+                                bugsCompleted += bugsCollection_Done.Items.Count;
                             }
 
                             AddSectionFooterToReport(sw);
@@ -306,11 +347,13 @@ namespace TPDailyRecapLight
                             if (us_WIP.Count > 0)
                             {
                                 AddRecordsToReport(us_WIP, sw, projectContext.Acid);
+                                userStoryInProgress += us_WIP.Count;
                             }
 
                             if (bugsCollection_InProgress.Items.Count > 0)
                             {
                                 AddRecordsToReport(bugsCollection_InProgress.Items.ToList<Bug>(), sw, projectContext.Acid);
+                                bugsInProgress += bugsCollection_InProgress.Items.Count;
                             }
                         }                           
                         
@@ -327,11 +370,13 @@ namespace TPDailyRecapLight
                                 if (userStoriesCollection_Planned.Items.Count > 0)
                                 {
                                     AddRecordsToReport(userStoriesCollection_Planned.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                                    userStoryPlanned += userStoriesCollection_Planned.Items.Count;
                                 }
 
                                 if (bugsCollection_Planned.Items.Count > 0)
                                 {
                                     AddRecordsToReport(bugsCollection_Planned.Items.ToList<Bug>(), sw, projectContext.Acid);
+                                    bugsPlanned += bugsCollection_Planned.Items.Count;
                                 }
 
                                 AddSectionFooterToReport(sw);
@@ -369,11 +414,13 @@ namespace TPDailyRecapLight
                                 if (userStoriesCollection_UAT.Items.Count > 0)
                                 {
                                     AddRecordsToReport(userStoriesCollection_UAT.Items.ToList<UserStory>(), sw, projectContext.Acid);
+                                    userStoryUAT += userStoriesCollection_UAT.Items.Count;
                                 }
 
                                 if (bugsCollection_UAT.Items.Count > 0)
                                 {
                                     AddRecordsToReport(bugsCollection_UAT.Items.ToList<Bug>(), sw, projectContext.Acid);
+                                    bugsUAT += bugsCollection_UAT.Items.Count;
                                 }
 
                                 AddSectionFooterToReport(sw);
@@ -386,6 +433,20 @@ namespace TPDailyRecapLight
                             AddProjectFooterToReport(sw);
                             projectAdded2Report = false;
                         }
+
+                        //Add project to Summary section
+                        AddProjectToSummary(project, userStoryCompleted, userStoryInProgress, userStoryPlanned, userStoryUAT, bugsCompleted, bugsInProgress, bugsPlanned, bugsUAT,AddProjectToSummaryLeft);
+
+                        if(AddProjectToSummaryLeft)
+                        {
+                            AddProjectToSummaryLeft=false;
+                        }
+                        else
+                        {
+                            AddProjectToSummaryLeft=true;
+                        }
+                        
+                        
                     }
                     
                 }            
@@ -395,8 +456,61 @@ namespace TPDailyRecapLight
             {
                 //TO-DO: add infor to the report that no projects had been modified for this day.
             }
+
+            //add summary Footer
+            StreamReader srSummary = new StreamReader(ReportPath + "Summary_Footer.html");
+            content = srSummary.ReadToEnd();
+            
+            StreamWriter swSummary = new StreamWriter(sHTMLSummaryFile, true, Encoding.UTF8);
+            swSummary.Write(content);
+            srSummary.Close();
+            swSummary.Close();            
     }
 
+        private static void AddProjectToSummary(Project project, int userStoryCompleted, int userStoryInProgress, int userStoryPlanned, int userStoryUAT, int bugsCompleted, int bugsInProgress, int bugsPlanned, int bugsUAT, bool Add2Left)
+        {
+            StreamReader srEntry = new StreamReader(ReportPath + "SummaryEntry.html");
+            String entry = srEntry.ReadToEnd();
+
+            entry = entry.Replace("##ProjectName##", project.Name);
+            entry = entry.Replace("##BugsCompleted##",bugsCompleted.ToString());
+            entry = entry.Replace("##UserStoryCompleted##",userStoryCompleted.ToString());
+            entry = entry.Replace("##BugsInProgress##",bugsInProgress.ToString());
+            entry = entry.Replace("##UserStoryInProgress##",userStoryInProgress.ToString());
+            entry = entry.Replace("##BugsPlanned##",bugsPlanned.ToString());
+            entry = entry.Replace("##UserStoryPlanned##",userStoryPlanned.ToString());
+            entry = entry.Replace("##BugsUAT##",bugsUAT.ToString());
+            entry = entry.Replace("##UserStoryUAT##",userStoryUAT.ToString());
+            entry = entry.Replace("##ProjectID##", project.Id.ToString());
+
+            if (Add2Left)
+            {
+                StreamReader sr = new StreamReader(ReportPath + "Summary_record.html");
+                String content = sr.ReadToEnd();
+
+                content = content.Replace("##SummaryEntryLeft##",entry);
+
+                StreamWriter sw = new StreamWriter(sHTMLSummaryFile, true, Encoding.UTF8);
+                sw.Write(content);
+                sw.Close();
+                sr.Close();
+            }
+            else
+            {
+                StreamReader sr = new StreamReader(sHTMLSummaryFile);
+                String content = sr.ReadToEnd();
+
+                content = content.Replace("##SummaryEntryRight##", entry);
+
+                sr.Close();
+
+                StreamWriter sw = new StreamWriter(sHTMLSummaryFile, false, Encoding.UTF8);
+                sw.Write(content);
+                sw.Close();
+            }
+            
+        }
+        
         private static void AddProjectHeaderToReport(Project project, StreamWriter sw)
         {
             //Add report section to output file    
@@ -405,6 +519,7 @@ namespace TPDailyRecapLight
             String content = sr.ReadToEnd();
 
             content = content.Replace("##ProjectName##", project.Name);
+            content = content.Replace("##ProjectID##", project.Id.ToString());
             //add project owner
             content = content.Replace("##ProjectOwner##", project.Owner.ToString());
             sw.Write(content);
