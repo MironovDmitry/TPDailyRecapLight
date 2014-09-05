@@ -22,7 +22,7 @@ namespace TPDailyRecapLight
         private static String ReportPath = Properties.Settings.Default.HTMLLocation.ToString();
         private static String sHTMLReportFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\report.html";
         private static String sHTMLSummaryFile = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\Summary.html";
-        private const bool DebugModeOn = true;
+        private const bool DebugModeOn = false;
         
         private const String UserStorySelectionFields = "include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]],TeamIteration[Id,Name,StartDate,EndDate]]";
         private const String BugSelectionFields = "include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]],TeamIteration[Id,Name,StartDate,EndDate]]";
@@ -110,7 +110,8 @@ namespace TPDailyRecapLight
             content = srSummary.ReadToEnd();
             StreamReader srReport = new StreamReader(sHTMLReportFile);
             String reportContent = srReport.ReadToEnd();            
-            reportContent = reportContent.Replace("##SummarySection##", reportType=="Weekly" ? content : "");
+            //reportContent = reportContent.Replace("##SummarySection##", reportType=="Weekly" ? content : "");
+            reportContent = reportContent.Replace("##SummarySection##", ""); //убрал саммари по требованию Жени.
             reportContent = reportContent.Replace("##SummaryEntryRight##", "&nbsp;");
             srReport.Close();
             srReport.Dispose();
@@ -240,7 +241,9 @@ namespace TPDailyRecapLight
                             }
                             else
                             {
-                                queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Open')";
+                                //queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Open')";
+                                //Женя попросил сделать 
+                                queryCondition = "(Project.Id eq " + project.Id + ") and (EntityState.name eq 'Planned')";
                             }
                             
                             break;
