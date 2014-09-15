@@ -32,12 +32,14 @@ namespace TPDailyRecapLight
         private static DateTime reportStartDate;
         private static DateTime reportEndDate;
 
+        private static String reportType = "Daily";
+
         static void Main(string[] args)
         {              
             //process passed arguments
             //String rStartDate = DateTime.Today.ToString();
             //String rEndDate = DateTime.Today.ToString();
-            String reportType = "Daily";
+            // String reportType = "Daily";
 
             if (args.Length == 0)
             {
@@ -570,10 +572,7 @@ namespace TPDailyRecapLight
                 String EntityType = "UserStory";
                 //String EntityDeveloperAndEffort = " " + progressInt(story.EffortCompleted, story.Effort).ToString() + "% &emsp;&emsp; Разработчик: " + (story.Assignments.Items.Count > 0 ? story.Assignments.Items[0].GeneralUser.ToString() : "Не назначен");
                 //String EntityPercentCompleted = progressInt(story.EffortCompleted, story.Effort).ToString();
-                String EntityEffortCompleted = story.EffortCompleted.ToString();
-                String EntityEffortRemain = story.EffortToDo.ToString();
-                String EntityState = story.EntityState.Name;
-                String EntityDeveoperName = "";                
+                String EntityDeveoperName = "";
                 String AssignedUserID = "";
                 if (story.Assignments.Items.Count > 0)
                 {
@@ -585,24 +584,46 @@ namespace TPDailyRecapLight
                     EntityDeveoperName = "Не назначен";
                 }
 
-                string description = "";
-                if (story.Description != null && story.Description.Length > 0)
-                {
-                    description = HttpUtility.HtmlDecode(StripHTML(story.Description));
-                }
+                String EntityEffortCompleted = "";
+                String EntityEffortRemain = "";
+                String description = "";
+                String PlannedDates = "";  
 
-                String PlannedDates = "";
-                if (story.TeamIteration != null)
+                String EntityState = story.EntityState.Name;
+
+                if (reportType == "Weekly" && (EntityState == "Done" || EntityState == "Ready to release"))
                 {
-                    PlannedDates = @"<tr>
+                                
+                }
+                else
+                {
+                    EntityEffortCompleted = story.EffortCompleted.ToString();
+                    EntityEffortRemain = story.EffortToDo.ToString();                                     
+
+                    description = "";
+                    if (story.Description != null && story.Description.Length > 0)
+                    {
+                        String descriptionText = HttpUtility.HtmlDecode(StripHTML(story.Description));
+                        description = @"<tr><td colspan=""2"" style=""text-wrap:normal;border-bottom:1px solid #000000;"" width=""90"">&nbsp;</td><td style=""border-bottom:1px solid #000000;"">"
+                                        + (descriptionText.Length > 0 ? descriptionText.Substring(0, (descriptionText.Length > 255 ? 255 : descriptionText.Length)) + " ....." : "Описание отсутствует.") + 
+                                        "</td></tr>";
+                    }
+
+                    PlannedDates = "";
+                    if (story.TeamIteration != null)
+                    {
+                        PlannedDates = @"<tr>
                                         <td colspan=""2"" width=""90"">
                                             &nbsp;
                                         </td>
                                         <td style=""font-size:5pt;"">
-                                            <span style=""font-style:italic;font-size:10pt;"">" 
-                                                + story.TeamIteration.StartDate.ToShortDateString() + " : " + story.TeamIteration.EndDate.ToShortDateString() + 
-                                           "</span><br />&nbsp;</td></tr>";
+                                            <span style=""font-style:italic;font-size:10pt;"">"
+                                                    + story.TeamIteration.StartDate.ToShortDateString() + " : " + story.TeamIteration.EndDate.ToShortDateString() +
+                                               "</span><br />&nbsp;</td></tr>";
+                    }
                 }
+
+                
 
                 WriteEntityToReport(EntityID, EntityName, EntityType, EntityState, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(story.EffortCompleted, story.Effort), AssignedUserID, description, sw, acid, PlannedDates);
             }
@@ -617,10 +638,8 @@ namespace TPDailyRecapLight
                 String EntityType = "Bug";
                 //String EntityDeveloperAndEffort = " " + progressInt(bug.EffortCompleted, bug.Effort).ToString() + "% &emsp;&emsp; Разработчик: " + (bug.Assignments.Items.Count > 0 ? bug.Assignments.Items[0].GeneralUser.ToString() : "Не назначен");
                 //String EntityPercentCompleted = progressInt(bug.EffortCompleted, bug.Effort).ToString();
-                String EntityEffortCompleted = bug.EffortCompleted.ToString();
-                String EntityEffortRemain = bug.EffortToDo.ToString();
-                String EntityState = bug.EntityState.Name;
-                String EntityDeveoperName = "";                
+                
+                String EntityDeveoperName = "";
                 String AssignedUserID = "";
                 if (bug.Assignments.Items.Count > 0)
                 {
@@ -632,17 +651,37 @@ namespace TPDailyRecapLight
                     EntityDeveoperName = "Не назначен";
                 }
 
-                string description = "";
-                if (bug.Description != null && bug.Description.Length > 0)
-                {
-                    description = HttpUtility.HtmlDecode(StripHTML(bug.Description));
-                }
-
+                String EntityEffortCompleted = "";
+                String EntityEffortRemain = "";
+                string description = "";                
                 String PlannedDates = "";
-                if (bug.TeamIteration != null)
+
+                String EntityState = bug.EntityState.Name;
+
+                if (reportType == "Weekly" && (EntityState == "Done" || EntityState == "Ready to release"))
                 {
-                    PlannedDates = @"<tr><td colspan=""2"" width=""90"">&nbsp;</td><td style=""font-size:5pt;""><span style=""font-style:italic;font-size:10pt;"">" + bug.TeamIteration.StartDate.ToShortDateString() + " : " + bug.TeamIteration.EndDate.ToShortDateString() + "</span><br />&nbsp;</td></tr>";
+
                 }
+                else
+                {
+                    EntityEffortCompleted = bug.EffortCompleted.ToString();
+                    EntityEffortRemain = bug.EffortToDo.ToString();
+
+                    description = "";
+                    if (bug.Description != null && bug.Description.Length > 0)
+                    {
+                        String descriptionText = HttpUtility.HtmlDecode(StripHTML(bug.Description));
+                        description = @"<tr><td colspan=""2"" style=""text-wrap:normal;border-bottom:1px solid #000000;"" width=""90"">&nbsp;</td><td style=""border-bottom:1px solid #000000;"">"
+                                        + (descriptionText.Length > 0 ? descriptionText.Substring(0, (descriptionText.Length > 255 ? 255 : descriptionText.Length)) + " ....." : "Описание отсутствует.") +
+                                        "</td></tr>";
+                    }
+
+                    PlannedDates = "";
+                    if (bug.TeamIteration != null)
+                    {
+                        PlannedDates = @"<tr><td colspan=""2"" width=""90"">&nbsp;</td><td style=""font-size:5pt;""><span style=""font-style:italic;font-size:10pt;"">" + bug.TeamIteration.StartDate.ToShortDateString() + " : " + bug.TeamIteration.EndDate.ToShortDateString() + "</span><br />&nbsp;</td></tr>";
+                    }
+                }                
 
                 WriteEntityToReport(EntityID, EntityName, EntityType, EntityState, EntityDeveoperName, EntityEffortCompleted, EntityEffortRemain, progressInt(bug.EffortCompleted, bug.Effort), AssignedUserID, description, sw, acid, PlannedDates);
             }
@@ -685,8 +724,11 @@ namespace TPDailyRecapLight
                 content = content.Replace("##progressbgcolorandwidth##", "");
             }
 
-            content = content.Replace("##PlannedDates##", PlannedDates); 
-            content = content.Replace("##EntityDescription##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : "Описание отсутствует."));
+            content = content.Replace("##PlannedDates##", PlannedDates);
+            content = content.Replace("##EntityDescription##", description);
+           
+            //    content = content.Replace("##EntityDescription##", (description.Length > 0 ? description.Substring(0, (description.Length > 255 ? 255 : description.Length)) + " ....." : "Описание отсутствует."));
+           
             sw.Write(content);
             sr.Close();
 
