@@ -140,7 +140,7 @@ namespace TPDailyRecapLight
 
             bool projectAdded2Report = false;
             //get collection of projects
-            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?" + ProjectSelectionFields + "&where=(IsActive eq 'true') and (id ne 1710) and (id ne 497)&take=1000&format=json" + token)); //excelude Dmitry Mironov's personal tasks
+            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?" + ProjectSelectionFields + "&where=(IsActive eq 'true') and (id ne 1710) and (id ne 497) and and (id ne 477) and (id ne 1816) and (id ne 19304) and (id ne 23141)&take=1000&format=json" + token)); //excelude Dmitry Mironov's personal tasks
 
             //project acid property
             //String acid = "";
