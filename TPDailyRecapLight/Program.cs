@@ -27,6 +27,8 @@ namespace TPDailyRecapLight
         private const String UserStorySelectionFields = "include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Feature[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]],TeamIteration[Id,Name,StartDate,EndDate]]";
         private const String BugSelectionFields = "include=[Id,Name,Description,StartDate,EndDate,CreateDate,ModifyDate,Effort,EffortCompleted,EffortToDo,Owner[id,FirstName,LastName],EntityState[id,name],Assignments[Role,GeneralUser[id,FirstName,LastName]],TeamIteration[Id,Name,StartDate,EndDate]]";
         private const String ProjectSelectionFields = "include=[name,id,owner,process]";
+        private const String ProjectExclutionCondition = "(Name not contains 'j-sox') and (name ne 'Support') and (name not contains 'infra:') and (Name ne 'DM: Short tasks')";
+            //"and (id ne 1710) and (id ne 497) and (id ne 477) and (id ne 1816) and (id ne 19304) and (id ne 23141)";
         private const string token = "&token=Mjo5OUJFOUVCQTNEMzNGOEI3MzcyRjg1MzEwRkNGNzZDRQ==";
 
         private static DateTime reportStartDate;
@@ -140,7 +142,7 @@ namespace TPDailyRecapLight
 
             bool projectAdded2Report = false;
             //get collection of projects
-            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?" + ProjectSelectionFields + "&where=(IsActive eq 'true') and (id ne 1710) and (id ne 497) and and (id ne 477) and (id ne 1816) and (id ne 19304) and (id ne 23141)&take=1000&format=json" + token)); //excelude Dmitry Mironov's personal tasks
+            ProjectsCollection projectsCollection = JsonConvert.DeserializeObject<ProjectsCollection>(client.DownloadString(PathToTp + "projects?" + ProjectSelectionFields + "&where=(IsActive eq 'true')" + ProjectExclutionCondition + " &take=1000&format=json" + token)); //excelude Dmitry Mironov's personal tasks
 
             //project acid property
             //String acid = "";
